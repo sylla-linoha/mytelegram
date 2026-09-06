@@ -1,0 +1,82 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "MyTelegram Architecture",
+    "quality_profile": "showcase",
+    "viewBox": [1200, 680],
+    "views": [
+      {
+        "id": "ingress-auth",
+        "label": "Ingress and authentication",
+        "focus": ["clients", "gateway", "auth", "session"],
+        "note": "Client MTProto connections terminate at the gateway and authenticate with the auth server."
+      },
+      {
+        "id": "cqrs-core",
+        "label": "CQRS and messaging core",
+        "focus": ["session", "command", "query", "eventbus", "eventstore"],
+        "note": "Session server routes commands to write aggregates and queries to read projections."
+      },
+      {
+        "id": "storage-cache",
+        "label": "Storage and caching",
+        "focus": ["session", "cache", "fileserver", "eventstore"],
+        "note": "Media, session cache, and event store manage durable and fast ephemeral state."
+      }
+    ]
+  },
+  "components": [
+    { "id": "clients", "type": "external", "label": "Telegram Clients", "sublabel": "Desktop, mobile and web", "brand": "telegram", "pos": [50, 300], "size": [140, 68] },
+    { "id": "gateway", "type": "frontend", "label": "Gateway Server", "sublabel": "MTProto TCP and WS ingress", "brand": "dotnet", "pos": [260, 300], "size": [150, 68] },
+    { "id": "auth", "type": "security", "label": "Auth Server", "sublabel": "DH handshake and keys", "brand": "dotnet", "pos": [260, 130], "size": [150, 68] },
+    { "id": "session", "type": "backend", "label": "Session Server", "sublabel": "State and RPC dispatch", "brand": "dotnet", "pos": [490, 300], "size": [150, 68] },
+    { "id": "cache", "type": "database", "label": "Redis Cache", "sublabel": "Session state and lookup", "brand": "redis", "pos": [490, 130], "size": [150, 68] },
+    { "id": "fileserver", "type": "backend", "label": "File Server", "sublabel": "Media upload and download", "brand": "dotnet", "pos": [490, 480], "size": [150, 68] },
+    { "id": "command", "type": "backend", "label": "Messenger Command", "sublabel": "CQRS writes and aggregates", "brand": "dotnet", "pos": [730, 200], "size": [160, 68] },
+    { "id": "query", "type": "backend", "label": "Messenger Query", "sublabel": "CQRS reads and views", "brand": "dotnet", "pos": [730, 410], "size": [160, 68] },
+    { "id": "eventbus", "type": "messagebus", "label": "RabbitMQ EventBus", "sublabel": "Domain event distribution", "brand": "rabbitmq", "pos": [970, 200], "size": [160, 68] },
+    { "id": "eventstore", "type": "database", "label": "MongoDB Store", "sublabel": "Event store and read models", "brand": "mongodb", "pos": [970, 410], "size": [160, 68] }
+  ],
+  "connections": [
+    { "id": "client-to-gw", "from": "clients", "to": "gateway", "label": "MTProto frame", "variant": "emphasis" },
+    { "id": "gw-to-auth", "from": "gateway", "to": "auth", "label": "DH handshake", "variant": "security", "fromSide": "top", "toSide": "bottom" },
+    { "id": "gw-to-session", "from": "gateway", "to": "session", "label": "dispatch packet", "variant": "emphasis" },
+    { "id": "session-to-cache", "from": "session", "to": "cache", "label": "auth session", "fromSide": "top", "toSide": "bottom" },
+    { "id": "session-to-file", "from": "session", "to": "fileserver", "label": "media RPC", "fromSide": "bottom", "toSide": "top", "labelAt": [565, 424] },
+    { "id": "session-to-cmd", "from": "session", "to": "command", "label": "execute command" },
+    { "id": "session-to-query", "from": "session", "to": "query", "label": "fetch query" },
+    { "id": "cmd-to-bus", "from": "command", "to": "eventbus", "label": "publish event", "variant": "dashed" },
+    { "id": "cmd-to-store", "from": "command", "to": "eventstore", "label": "append event", "fromSide": "bottom", "toSide": "top" },
+    { "id": "query-to-store", "from": "query", "to": "eventstore", "label": "read projection" }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Protocol and Ingress",
+      "items": [
+        "MTProto 2.0 transport over TCP and WebSockets",
+        "Diffie-Hellman handshake for end-to-end encryption keys",
+        "Connection multiplexing and session lifecycle tracking"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "CQRS and Event Sourcing",
+      "items": [
+        "Command Server processes aggregate roots and domain logic",
+        "EventStore records immutable domain events in MongoDB",
+        "RabbitMQ publishes asynchronous domain events across services"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Query and Data Storage",
+      "items": [
+        "Query Server serves read requests from materialized views",
+        "Redis provides high-throughput session and auth caching",
+        "Dedicated File Server handles media streaming and documents"
+      ]
+    }
+  ]
+}
